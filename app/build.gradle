@@ -27,22 +27,31 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
 
 dependencies {
-
-    implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'com.google.android.material:material:1.5.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
 
     //google MAP : https://webnautes.tistory.com/647
     implementation 'com.google.android.gms:play-services-maps:18.0.2'
     implementation 'com.google.android.gms:play-services-location:19.0.1'
+
+    //현재 위치 조회
+    implementation 'com.google.android.material:material:1.4.0-alpha02'
+    implementation 'com.github.pedroSG94:AutoPermissions:1.0.3'
 
     //FireBase : https://lakue.tistory.com/37
     implementation platform('com.google.firebase:firebase-bom:29.1.0')
     implementation 'com.google.firebase:firebase-database:20.0.3'
     implementation 'com.google.firebase:firebase-firestore:24.0.1'
 
+    implementation 'com.github.pedroSG94:AutoPermissions:1.0.3'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'com.google.android.material:material:1.5.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
