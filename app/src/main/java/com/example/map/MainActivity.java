@@ -67,22 +67,21 @@ public class MainActivity extends AppCompatActivity
         }
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        AutoPermissions.Companion.loadAllPermissions(this, 101);
-
+        onMapReady(map);
 
         DB_Button = (Button) findViewById(R.id.button1);
         location = (Button) findViewById(R.id.button2);
 
-        DB_Button.setOnClickListener(new View.OnClickListener() {
+        location.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 //                databaseReference.child("message").push().setValue("2");
 //                exampleData();
+                startLocationService();
             }
         });
 
-
+        AutoPermissions.Companion.loadAllPermissions(this, 101);
     }
 
     public void startLocationService() {
@@ -147,8 +146,25 @@ public class MainActivity extends AppCompatActivity
             return;
         }
         Log.i("MyLocTest","지도 준비됨");
+        map = googleMap;
         map.setMyLocationEnabled(true);
-        startLocationService();
+
+        //경도, 위도
+        LatLng SEOUL = new LatLng(37.56, 126.97);
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(@NonNull Marker marker) {
+                Toast(marker.getTitle());
+                return false;
+            }
+        });
+
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(SEOUL);
+        markerOptions.title("서울");
+        markerOptions.snippet("한국의 수도");
+        map.addMarker(markerOptions);
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
     }
 
 
@@ -181,11 +197,11 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onResume() {
         super.onResume();
-
         // GPS provider를 이용전에 퍼미션 체크
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -272,39 +288,6 @@ public class MainActivity extends AppCompatActivity
 
 
     }
-
-//    @Override
-//    public void onMapReady(GoogleMap googleMap) {
-//
-//        mMap = googleMap;
-//        //경도, 위도
-//        LatLng SEOUL = new LatLng(37.56, 126.97);
-//        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-//            @Override
-//            public boolean onMarkerClick(@NonNull Marker marker) {
-//                Toast(marker.getTitle());
-//                return false;
-//            }
-//        });
-//
-////        MarkerOptions markerOptions = new MarkerOptions();
-////        markerOptions.position(SEOUL);
-////        markerOptions.title("서울");
-////        markerOptions.snippet("한국의 수도");
-////        mMap.addMarker(markerOptions);
-////        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
-//
-//
-////        LatLng GUNPO = new LatLng(37.3616703, 126.9351741);
-////        MarkerOptions markerOptions1 = new MarkerOptions();
-////        markerOptions1.position(GUNPO);
-////        markerOptions1.title("군포");
-////        markerOptions1.snippet("TEST");
-////        mMap.addMarker(markerOptions1);
-////        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(GUNPO,10));
-//    }
-
-
 
     //    public void exampleData() {
 //        Map<String, Object> data1 = new HashMap<>();
