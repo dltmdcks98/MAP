@@ -33,8 +33,17 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.pedro.library.AutoPermissions;
 import com.pedro.library.AutoPermissionsListener;
+
+import java.util.HashMap;
 
 //구글 맵 연동 https://webnautes.tistory.com/647
 //현재 위치 조회  https://wonpaper.tistory.com/230
@@ -50,12 +59,18 @@ public class MainActivity extends AppCompatActivity
     Circle circle;
     CircleOptions circle1KM;
 
+    private DatabaseReference mDatabase;
+
     private Button DB_Button, location;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+
+        readUser();
 
         manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         gpsListener = new GPSListener();
@@ -72,12 +87,19 @@ public class MainActivity extends AppCompatActivity
         DB_Button = (Button) findViewById(R.id.button1);
         location = (Button) findViewById(R.id.button2);
 
+
         location.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                databaseReference.child("message").push().setValue("2");
-//                exampleData();
                 startLocationService();
+            }
+        });
+        DB_Button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String getUserName = "test";
+                String getUserEmail = "37.56";
+                readUser();
             }
         });
 
@@ -158,6 +180,27 @@ public class MainActivity extends AppCompatActivity
         markerOptions.snippet("한국의 수도");
         map.addMarker(markerOptions);
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
+    }
+
+    private void readUser() {
+        mDatabase.child("user").child("1").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                // Get Post object and use the values to update the UI
+                if (dataSnapshot.getValue(User.class) != null) {
+                    User post = dataSnapshot.getValue(User.class);
+                    Log.w("FireBaseData", "getData" + post.toString());
+                } else {
+                    Toast.makeText(MainActivity.this, "데이터 없음...", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                // Getting Post failed, log a message
+                Log.w("FireBaseData", "loadPost:onCancelled", databaseError.toException());
+            }
+        });
     }
 
 
@@ -268,16 +311,6 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    //    public void exampleData() {
-//        Map<String, Object> data1 = new HashMap<>();
-//        data1.put("name", "San Francisco");
-//        data1.put("state", "CA");
-//        data1.put("country", "USA");
-//        data1.put("capital", false);
-//        data1.put("population", 860000);
-//        data1.put("regions", Arrays.asList("west_coast", "norcal"));
-//        cities.document("SF").set(data1);
-//   }
     public  void Toast(String str){
         Toast myToast = Toast.makeText(this.getApplicationContext(),str, Toast.LENGTH_SHORT);
         myToast.show();
