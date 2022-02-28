@@ -142,14 +142,12 @@ public class MainActivity extends AppCompatActivity
                     Log.i("MyLocTest", "최근 위치2 호출" + message);
                 }
 
-
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
                 //manager.removeUpdates(gpsListener);
                 Toast.makeText(getApplicationContext(), "내 위치2확인 요청함", Toast.LENGTH_SHORT).show();
                 Log.i("MyLocTest", "requestLocationUpdates() 내 위치2에서 호출시작 ~~ ");
             }
-
         } catch (SecurityException e) {
             e.printStackTrace();
         }
@@ -182,6 +180,7 @@ public class MainActivity extends AppCompatActivity
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
     }
 
+    //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
     private void readUser() {
         mDatabase.child("user").child("1").addValueEventListener(new ValueEventListener() {
             @Override
