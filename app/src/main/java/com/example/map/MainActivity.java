@@ -54,13 +54,11 @@ public class MainActivity extends AppCompatActivity
     LocationManager manager;
     GPSListener gpsListener;
     SupportMapFragment mapFragment;
-    Marker myMarker;
-    MarkerOptions myLocationMarker;
-    Circle circle;
-    CircleOptions circle1KM;
 
-
+    //DB조회
     private DatabaseReference mDatabase;
+    Double latitude;
+    Double longitude;
 
     private Button DB_Button, location;
 
@@ -98,8 +96,6 @@ public class MainActivity extends AppCompatActivity
         DB_Button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String getUserName = "test";
-                String getUserEmail = "37.56";
                 readUser();
             }
         });
@@ -139,15 +135,12 @@ public class MainActivity extends AppCompatActivity
                     double longitude = location.getLongitude();
                     String message = "최근 위치2 -> Latitude : " + latitude + "\n Longitude : " + longitude;
                     showCurrentLocation(latitude, longitude);
-
                     Log.i("MyLocTest", "최근 위치2 호출" + message);
                 }
 
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
-                //manager.removeUpdates(gpsListener);
-                Toast.makeText(getApplicationContext(), "내 위치2확인 요청함", Toast.LENGTH_SHORT).show();
-                Log.i("MyLocTest", "requestLocationUpdates() 내 위치2에서 호출시작 ~~ ");
+
             }
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -159,12 +152,23 @@ public class MainActivity extends AppCompatActivity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        Log.i("MyLocTest","지도 준비됨");
         map = googleMap;
         map.setMyLocationEnabled(true);
 
         //경도, 위도
-        LatLng SEOUL = new LatLng(37.56, 126.97);
+        mDatabase.child("map").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                com.example.map.Location group = snapshot.getValue(com.example.map.Location.class);
+                latitude = group.getLatitude();
+                longitude = group.getLongitude();
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+        LatLng SEOUL = new LatLng(latitude, longitude);
         map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(@NonNull Marker marker) {
@@ -172,7 +176,7 @@ public class MainActivity extends AppCompatActivity
                 return false;
             }
         });
-
+        //TODO : DB 데이터로 marker만들기
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(SEOUL);
         markerOptions.title("서울");
@@ -181,7 +185,10 @@ public class MainActivity extends AppCompatActivity
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
     }
 
+
     //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
+
+    //DB 읽기
     private void readUser() {
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
@@ -277,39 +284,39 @@ public class MainActivity extends AppCompatActivity
     private void showCurrentLocation(double latitude, double longitude) {
         LatLng curPoint = new LatLng(latitude, longitude);
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(curPoint, 15));
-        showMyLocationMarker(curPoint);
+//        showMyLocationMarker(curPoint);
     }
 
-    private void showMyLocationMarker(LatLng curPoint) {
-        if (myLocationMarker == null) {
-            myLocationMarker = new MarkerOptions(); // 마커 객체 생성
-            myLocationMarker.position(curPoint);
-            myLocationMarker.title("최근위치 \n");
-            myLocationMarker.snippet("*GPS로 확인한 최근위치");
-            myLocationMarker.icon(BitmapDescriptorFactory.fromResource((R.drawable.mylocation)));
-            myMarker = map.addMarker(myLocationMarker);
-        } else {
-            myMarker.remove(); // 마커삭제
-            myLocationMarker.position(curPoint);
-            myMarker = map.addMarker(myLocationMarker);
-        }
-
-        // 반경추가
-        if (circle1KM == null) {
-            circle1KM = new CircleOptions().center(curPoint) // 원점
-                    .radius(1000)       // 반지름 단위 : m
-                    .strokeWidth(1.0f);    // 선너비 0f : 선없음
-            //.fillColor(Color.parseColor("#1AFFFFFF")); // 배경색
-            circle = map.addCircle(circle1KM);
-
-        } else {
-            circle.remove(); // 반경삭제
-            circle1KM.center(curPoint);
-            circle = map.addCircle(circle1KM);
-        }
-
-
-    }
+//    private void showMyLocationMarker(LatLng curPoint) {
+//        if (myLocationMarker == null) {
+//            myLocationMarker = new MarkerOptions(); // 마커 객체 생성
+//            myLocationMarker.position(curPoint);
+//            myLocationMarker.title("최근위치 \n");
+//            myLocationMarker.snippet("*GPS로 확인한 최근위치");
+//            myLocationMarker.icon(BitmapDescriptorFactory.fromResource((R.drawable.mylocation)));
+//            myMarker = map.addMarker(myLocationMarker);
+//        } else {
+//            myMarker.remove(); // 마커삭제
+//            myLocationMarker.position(curPoint);
+//            myMarker = map.addMarker(myLocationMarker);
+//        }
+//
+//        // 반경추가
+//        if (circle1KM == null) {
+//            circle1KM = new CircleOptions().center(curPoint) // 원점
+//                    .radius(1000)       // 반지름 단위 : m
+//                    .strokeWidth(1.0f);    // 선너비 0f : 선없음
+//            //.fillColor(Color.parseColor("#1AFFFFFF")); // 배경색
+//            circle = map.addCircle(circle1KM);
+//
+//        } else {
+//            circle.remove(); // 반경삭제
+//            circle1KM.center(curPoint);
+//            circle = map.addCircle(circle1KM);
+//        }
+//
+//
+//    }
 
     public  void Toast(String str){
         Toast myToast = Toast.makeText(this.getApplicationContext(),str, Toast.LENGTH_SHORT);

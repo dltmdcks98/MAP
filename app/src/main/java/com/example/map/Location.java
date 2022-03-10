@@ -20,7 +20,7 @@ public class Location {
         return num;
     }
 
-    public void getNum(int num) {
+    public void setNum(int num) {
         this.num = num;
     }
 
@@ -36,20 +36,20 @@ public class Location {
         return latitude;
     }
 
-    public void getLatitude(Double latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
     public Double getLongitude() { return longitude; }
 
-    public void getLongitude(Double longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 
     @Override
     public String toString() {
         return "User{" +
-                "num='" + num + '\'' +
+                "num='" + location + '\'' +
                 "location='" + location + '\'' +
                 "latitude='" + latitude  + '\'' +
                 ", longitude='" + longitude + '\'' +
