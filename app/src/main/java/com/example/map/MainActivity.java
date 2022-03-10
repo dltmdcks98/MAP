@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity
     Circle circle;
     CircleOptions circle1KM;
 
+
     private DatabaseReference mDatabase;
 
     private Button DB_Button, location;
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mDatabase = FirebaseDatabase.getInstance().getReference().child("map");
 
         readUser();
 
@@ -182,12 +183,12 @@ public class MainActivity extends AppCompatActivity
 
     //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
     private void readUser() {
-        mDatabase.child("user").child("1").addValueEventListener(new ValueEventListener() {
+        mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 // Get Post object and use the values to update the UI
-                if (dataSnapshot.getValue(User.class) != null) {
-                    User post = dataSnapshot.getValue(User.class);
+                if (dataSnapshot.getValue(com.example.map.Location.class) != null) {
+                    com.example.map.Location post = dataSnapshot.getValue(com.example.map.Location.class);
                     Log.w("FireBaseData", "getData" + post.toString());
                 } else {
                     Toast.makeText(MainActivity.this, "데이터 없음...", Toast.LENGTH_SHORT).show();

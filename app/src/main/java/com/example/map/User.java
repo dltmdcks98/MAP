@@ -1,7 +1,4 @@
 package com.example.map;
-
-
-
 public class User {
 
     public String userName;

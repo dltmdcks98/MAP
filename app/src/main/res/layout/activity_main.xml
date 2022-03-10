@@ -31,7 +31,7 @@
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="DB저장"
+                    android:text="DBCheck"
                     android:id="@+id/button1"
                     android:layout_weight="1"
                     />
