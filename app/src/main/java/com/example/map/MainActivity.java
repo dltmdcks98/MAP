@@ -177,6 +177,9 @@ public class MainActivity extends AppCompatActivity
             }
         });
         //TODO : DB 데이터로 marker만들기
+//        1.https://gun0912.tistory.com/57
+//        2.https://fjdkslvn.tistory.com/17
+//        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(SEOUL);
         markerOptions.title("서울");
