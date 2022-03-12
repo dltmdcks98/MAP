@@ -82,7 +82,6 @@ public class MainActivity extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
         startLocationService();
-        readLocation(1);
         AutoPermissions.Companion.loadAllPermissions(this, 101);
     }
 
@@ -137,7 +136,7 @@ public class MainActivity extends AppCompatActivity
         }
         map = googleMap;
         map.setMyLocationEnabled(true);
-       
+        readLocation(1);
         map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(@NonNull Marker marker) {
@@ -159,8 +158,8 @@ public class MainActivity extends AppCompatActivity
 //        map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
     }
 
-    private Marker addMarker(com.example.map.Location location) {
-        LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+    private Marker addMarker(Double latitude, Double longitude) {
+        LatLng position = new LatLng(latitude, longitude);
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.title("test");
         markerOptions.position(position);
@@ -177,7 +176,7 @@ public class MainActivity extends AppCompatActivity
                 com.example.map.Location map = dataSnapshot.getValue(com.example.map.Location.class);
                 Double latitude = map.getLatitude();
                 Double longitude = map.getLongitude();
-
+                addMarker(latitude,longitude);
                 // Get Post object and use the values to update the UI
 //                if (dataSnapshot.getValue(com.example.map.Location.class) != null) {
 //                    com.example.map.Location post = dataSnapshot.getValue(com.example.map.Location.class);
