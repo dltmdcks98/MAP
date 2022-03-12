@@ -43,7 +43,10 @@ import com.google.firebase.database.ValueEventListener;
 import com.pedro.library.AutoPermissions;
 import com.pedro.library.AutoPermissionsListener;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 //구글 맵 연동 https://webnautes.tistory.com/647
 //현재 위치 조회  https://wonpaper.tistory.com/230
@@ -57,10 +60,8 @@ public class MainActivity extends AppCompatActivity
 
     //DB조회
     private DatabaseReference mDatabase;
-    Double latitude;
-    Double longitude;
+    Marker selectedMarker;
 
-    private Button DB_Button, location;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,8 +69,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         mDatabase = FirebaseDatabase.getInstance().getReference().child("map");
-
-        readUser();
 
         manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         gpsListener = new GPSListener();
@@ -82,24 +81,8 @@ public class MainActivity extends AppCompatActivity
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
-        DB_Button = (Button) findViewById(R.id.button1);
-        location = (Button) findViewById(R.id.button2);
-
-
-        location.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startLocationService();
-            }
-        });
-        DB_Button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                readUser();
-            }
-        });
-
+        startLocationService();
+        readLocation(1);
         AutoPermissions.Companion.loadAllPermissions(this, 101);
     }
 
@@ -117,7 +100,7 @@ public class MainActivity extends AppCompatActivity
                     double latitude = location.getLatitude();
                     double longitude = location.getLongitude();
                     String message = "최근 위치1 -> Latitude : " + latitude + "\n Longitude : " + longitude;
-                    showCurrentLocation(latitude, longitude);
+//                    showCurrentLocation(latitude, longitude);
                     Log.i("MyLocTest", "최근 위치1 호출" + message);
                 }
 
@@ -154,21 +137,7 @@ public class MainActivity extends AppCompatActivity
         }
         map = googleMap;
         map.setMyLocationEnabled(true);
-
-        //경도, 위도
-        mDatabase.child("map").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                com.example.map.Location group = snapshot.getValue(com.example.map.Location.class);
-                latitude = group.getLatitude();
-                longitude = group.getLongitude();
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-        LatLng SEOUL = new LatLng(latitude, longitude);
+       
         map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(@NonNull Marker marker) {
@@ -180,29 +149,45 @@ public class MainActivity extends AppCompatActivity
 //        1.https://gun0912.tistory.com/57
 //        2.https://fjdkslvn.tistory.com/17
 //        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(SEOUL);
-        markerOptions.title("서울");
-        markerOptions.snippet("한국의 수도");
-        map.addMarker(markerOptions);
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
+
+        //TODO : 마커 클러스터 https://developers.google.com/maps/documentation/android-sdk/utility/marker-clustering
+//        MarkerOptions markerOptions = new MarkerOptions();
+//        markerOptions.position(SEOUL);
+//        markerOptions.title("서울");
+//        markerOptions.snippet("한국의 수도");
+//        map.addMarker(markerOptions);
+//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
     }
 
+    private Marker addMarker(com.example.map.Location location) {
+        LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.title("test");
+        markerOptions.position(position);
+        return map.addMarker(markerOptions);
+    }
 
     //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
 
     //DB 읽기
-    private void readUser() {
-        mDatabase.addValueEventListener(new ValueEventListener() {
+    private void readLocation(int i) {
+        mDatabase.child(String.valueOf(i)).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                com.example.map.Location map = dataSnapshot.getValue(com.example.map.Location.class);
+                Double latitude = map.getLatitude();
+                Double longitude = map.getLongitude();
+
                 // Get Post object and use the values to update the UI
-                if (dataSnapshot.getValue(com.example.map.Location.class) != null) {
-                    com.example.map.Location post = dataSnapshot.getValue(com.example.map.Location.class);
-                    Log.w("FireBaseData", "getData" + post.toString());
-                } else {
-                    Toast.makeText(MainActivity.this, "데이터 없음...", Toast.LENGTH_SHORT).show();
-                }
+//                if (dataSnapshot.getValue(com.example.map.Location.class) != null) {
+//                    com.example.map.Location post = dataSnapshot.getValue(com.example.map.Location.class);
+//                    for (DataSnapshot messageData : dataSnapshot.getChildren()){
+//                       Map<String, Double> map = new HashMap<>();
+//                        Toast(String.valueOf(map.get("latitude")));
+//                    }
+//                } else {
+//                    Toast.makeText(MainActivity.this, "데이터 없음...", Toast.LENGTH_SHORT).show();
+//                }
             }
 
             @Override
@@ -212,6 +197,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
+
+    //지오 코딩 : https://blog.naver.com/PostView.nhn?isHttpsRedirect=true&blogId=qbxlvnf11&logNo=221183308547&parentCategoryNo=&categoryNo=44&viewDate=&isShowPopularPosts=false&from=postView
 
 
     class GPSListener implements LocationListener {
@@ -241,8 +228,6 @@ public class MainActivity extends AppCompatActivity
 
         }
     }
-
-
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override

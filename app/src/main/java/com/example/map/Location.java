@@ -1,7 +1,6 @@
 package com.example.map;
 
 public class Location {
-    public int num;
     public String location;
     public Double latitude;
     public Double longitude;
@@ -10,18 +9,10 @@ public class Location {
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
-    public Location(int num, String location, Double latitude, Double longitude) {
-        this.num = num;
+    public Location(String location, Double latitude, Double longitude) {
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
-    }
-    public int getNum() {
-        return num;
-    }
-
-    public void setNum(int num) {
-        this.num = num;
     }
 
     public String getLocation() {
@@ -48,8 +39,7 @@ public class Location {
 
     @Override
     public String toString() {
-        return "User{" +
-                "num='" + location + '\'' +
+        return "map{" +
                 "location='" + location + '\'' +
                 "latitude='" + latitude  + '\'' +
                 ", longitude='" + longitude + '\'' +
