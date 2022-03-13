@@ -6,20 +6,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -27,14 +21,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -42,11 +31,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.pedro.library.AutoPermissions;
 import com.pedro.library.AutoPermissionsListener;
-
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 //구글 맵 연동 https://webnautes.tistory.com/647
 //현재 위치 조회  https://wonpaper.tistory.com/230
@@ -61,6 +45,7 @@ public class MainActivity extends AppCompatActivity
     //DB조회
     private DatabaseReference mDatabase;
     Marker selectedMarker;
+    static long count;
 
 
     @Override
@@ -69,7 +54,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         mDatabase = FirebaseDatabase.getInstance().getReference().child("map");
-
         manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         gpsListener = new GPSListener();
         try {
@@ -89,40 +73,38 @@ public class MainActivity extends AppCompatActivity
         try {
             Location location = null;
 
-            long minTime = 0;        // 0초마다 갱신 - 바로바로갱신
+            long minTime = 5000;
             float minDistance = 0;
 
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-                if (location != null) {
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
-                    String message = "최근 위치1 -> Latitude : " + latitude + "\n Longitude : " + longitude;
+//                if (location != null) {
+//                    double latitude = location.getLatitude();
+//                    double longitude = location.getLongitude();
+//                    String message = "최근 위치1 -> Latitude : " + latitude + "\n Longitude : " + longitude;
 //                    showCurrentLocation(latitude, longitude);
-                    Log.i("MyLocTest", "최근 위치1 호출" + message);
-                }
+//                    Log.i("MyLocTest", "최근 위치1 호출" + message);
+//                }
 
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
-                //manager.removeUpdates(gpsListener);
-                Toast.makeText(getApplicationContext(), "내 위치1확인 요청함", Toast.LENGTH_SHORT).show();
-                Log.i("MyLocTest", "requestLocationUpdates() 내 위치1에서 호출시작 ~~ ");
+                manager.removeUpdates(gpsListener);
+                Toast("GPS이용");
 
             } else if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 
                 location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                if (location != null) {
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
-                    String message = "최근 위치2 -> Latitude : " + latitude + "\n Longitude : " + longitude;
-                    showCurrentLocation(latitude, longitude);
-                    Log.i("MyLocTest", "최근 위치2 호출" + message);
-                }
+//                if (location != null) {
+//                    double latitude = location.getLatitude();
+//                    double longitude = location.getLongitude();
+//                    String message = "최근 위치2 -> Latitude : " + latitude + "\n Longitude : " + longitude;
+//                    showCurrentLocation(latitude, longitude);
+//                    Log.i("MyLocTest", "최근 위치2 호출" + message);
+//                }
 
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
-
+                Toast("네트워크 이용");
             }
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -134,9 +116,10 @@ public class MainActivity extends AppCompatActivity
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
         map = googleMap;
         map.setMyLocationEnabled(true);
-        readLocation(1);
+        readLocation();
         map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(@NonNull Marker marker) {
@@ -144,7 +127,7 @@ public class MainActivity extends AppCompatActivity
                 return false;
             }
         });
-        //TODO : DB 데이터로 marker만들기
+
 //        1.https://gun0912.tistory.com/57
 //        2.https://fjdkslvn.tistory.com/17
 //        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
@@ -158,10 +141,10 @@ public class MainActivity extends AppCompatActivity
 //        map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
     }
 
-    private Marker addMarker(Double latitude, Double longitude) {
+    private Marker addMarker(Double latitude, Double longitude, String location) {
         LatLng position = new LatLng(latitude, longitude);
         MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.title("test");
+        markerOptions.title(location);
         markerOptions.position(position);
         return map.addMarker(markerOptions);
     }
@@ -169,34 +152,38 @@ public class MainActivity extends AppCompatActivity
     //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
 
     //DB 읽기
-    private void readLocation(int i) {
-        mDatabase.child(String.valueOf(i)).addValueEventListener(new ValueEventListener() {
+    private void readLocation(){
+        mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                com.example.map.Location map = dataSnapshot.getValue(com.example.map.Location.class);
-                Double latitude = map.getLatitude();
-                Double longitude = map.getLongitude();
-                addMarker(latitude,longitude);
-                // Get Post object and use the values to update the UI
-//                if (dataSnapshot.getValue(com.example.map.Location.class) != null) {
-//                    com.example.map.Location post = dataSnapshot.getValue(com.example.map.Location.class);
-//                    for (DataSnapshot messageData : dataSnapshot.getChildren()){
-//                       Map<String, Double> map = new HashMap<>();
-//                        Toast(String.valueOf(map.get("latitude")));
-//                    }
-//                } else {
-//                    Toast.makeText(MainActivity.this, "데이터 없음...", Toast.LENGTH_SHORT).show();
-//                }
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                count = snapshot.getChildrenCount();
+                for(int i = 1; i <= count; i++){
+                    mDatabase.child(String.valueOf(i)).addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            com.example.map.Location map = snapshot.getValue(com.example.map.Location.class);
+                            Double latitude = map.getLatitude();
+                            Double longitude = map.getLongitude();
+                            String location = map.getLocation();
+                            addMarker(latitude,longitude,location);
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+                }
+
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                // Getting Post failed, log a message
-                Log.w("FireBaseData", "loadPost:onCancelled", databaseError.toException());
+            public void onCancelled(@NonNull DatabaseError error) {
+
             }
+
         });
     }
-
     //지오 코딩 : https://blog.naver.com/PostView.nhn?isHttpsRedirect=true&blogId=qbxlvnf11&logNo=221183308547&parentCategoryNo=&categoryNo=44&viewDate=&isShowPopularPosts=false&from=postView
 
 
@@ -207,7 +194,6 @@ public class MainActivity extends AppCompatActivity
         public void onLocationChanged(Location location) {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            String message = "내 위치는 Latitude : " + latitude + "\nLongtitude : " + longitude;
             showCurrentLocation(latitude, longitude);
             Log.i("MyLocTest", "onLocationChanged() 호출되었습니다.");
         }
