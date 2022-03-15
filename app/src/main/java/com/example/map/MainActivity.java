@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapsInitializer;
@@ -29,6 +30,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterManager;
 import com.pedro.library.AutoPermissions;
 import com.pedro.library.AutoPermissionsListener;
 
@@ -44,9 +47,6 @@ public class MainActivity extends AppCompatActivity
 
     //DB조회
     private DatabaseReference mDatabase;
-    Marker selectedMarker;
-    static long count;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,81 +110,6 @@ public class MainActivity extends AppCompatActivity
             e.printStackTrace();
         }
     }
-
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        map = googleMap;
-        map.setMyLocationEnabled(true);
-        readLocation();
-        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(@NonNull Marker marker) {
-                Toast(marker.getTitle());
-                return false;
-            }
-        });
-
-//        1.https://gun0912.tistory.com/57
-//        2.https://fjdkslvn.tistory.com/17
-//        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
-
-        //TODO : 마커 클러스터 https://developers.google.com/maps/documentation/android-sdk/utility/marker-clustering
-//        MarkerOptions markerOptions = new MarkerOptions();
-//        markerOptions.position(SEOUL);
-//        markerOptions.title("서울");
-//        markerOptions.snippet("한국의 수도");
-//        map.addMarker(markerOptions);
-//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(SEOUL, 10));
-    }
-
-    private Marker addMarker(Double latitude, Double longitude, String location) {
-        LatLng position = new LatLng(latitude, longitude);
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.title(location);
-        markerOptions.position(position);
-        return map.addMarker(markerOptions);
-    }
-
-    //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
-
-    //DB 읽기
-    private void readLocation(){
-        mDatabase.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                count = snapshot.getChildrenCount();
-                for(int i = 1; i <= count; i++){
-                    mDatabase.child(String.valueOf(i)).addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            com.example.map.Location map = snapshot.getValue(com.example.map.Location.class);
-                            Double latitude = map.getLatitude();
-                            Double longitude = map.getLongitude();
-                            String location = map.getLocation();
-                            addMarker(latitude,longitude,location);
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-
-                        }
-                    });
-                }
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-
-        });
-    }
-    //지오 코딩 : https://blog.naver.com/PostView.nhn?isHttpsRedirect=true&blogId=qbxlvnf11&logNo=221183308547&parentCategoryNo=&categoryNo=44&viewDate=&isShowPopularPosts=false&from=postView
 
 
     class GPSListener implements LocationListener {
@@ -257,39 +182,79 @@ public class MainActivity extends AppCompatActivity
     private void showCurrentLocation(double latitude, double longitude) {
         LatLng curPoint = new LatLng(latitude, longitude);
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(curPoint, 15));
-//        showMyLocationMarker(curPoint);
     }
 
-//    private void showMyLocationMarker(LatLng curPoint) {
-//        if (myLocationMarker == null) {
-//            myLocationMarker = new MarkerOptions(); // 마커 객체 생성
-//            myLocationMarker.position(curPoint);
-//            myLocationMarker.title("최근위치 \n");
-//            myLocationMarker.snippet("*GPS로 확인한 최근위치");
-//            myLocationMarker.icon(BitmapDescriptorFactory.fromResource((R.drawable.mylocation)));
-//            myMarker = map.addMarker(myLocationMarker);
-//        } else {
-//            myMarker.remove(); // 마커삭제
-//            myLocationMarker.position(curPoint);
-//            myMarker = map.addMarker(myLocationMarker);
-//        }
-//
-//        // 반경추가
-//        if (circle1KM == null) {
-//            circle1KM = new CircleOptions().center(curPoint) // 원점
-//                    .radius(1000)       // 반지름 단위 : m
-//                    .strokeWidth(1.0f);    // 선너비 0f : 선없음
-//            //.fillColor(Color.parseColor("#1AFFFFFF")); // 배경색
-//            circle = map.addCircle(circle1KM);
-//
-//        } else {
-//            circle.remove(); // 반경삭제
-//            circle1KM.center(curPoint);
-//            circle = map.addCircle(circle1KM);
-//        }
-//
-//
-//    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        map = googleMap;
+        map.setMyLocationEnabled(true);
+        //마커 클러스터 https://developers.google.com/maps/documentation/android-sdk/utility/marker-clustering
+        ClusterManager<MyItem> mclusterManager = new ClusterManager<>(this, map);
+
+        //map에 DB 내용 추가
+        mDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for(int i = 1; i <= snapshot.getChildrenCount(); i++){
+                    mDatabase.child(String.valueOf(i)).addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            MapDB map = snapshot.getValue(MapDB.class);
+                            double latitude = map.getLatitude();
+                            double longitude = map.getLongitude();
+                            String title = map.getTitle();
+                            for(int i =0; i< 10; i++) {
+                                mclusterManager.addItem(new MyItem(latitude, longitude, title));
+                                latitude +=1;
+                                longitude +=1;
+                                title +=1;
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+
+                        }
+                    });
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+
+        });
+        map.setOnCameraIdleListener(mclusterManager);
+        map.setOnMarkerClickListener(mclusterManager);
+
+        //클러스터 클릭시 클러스터 확대 및 시점 이동
+        //https://1d1cblog.tistory.com/119
+        mclusterManager.setOnClusterClickListener(new ClusterManager.OnClusterClickListener<MyItem>() {
+            @Override
+            public boolean onClusterClick(Cluster<MyItem> cluster) {
+                LatLng latLng = new LatLng(cluster.getPosition().latitude, cluster.getPosition().longitude);
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 15);
+                map.moveCamera(cameraUpdate);
+                return false;
+            }
+        });
+
+//        1.https://gun0912.tistory.com/57
+//        2.https://fjdkslvn.tistory.com/17
+//        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
+
+
+    }
+
+    //https://github.com/lakue119/FirebaseSample/blob/master/app/src/main/java/com/lakue/firebasesample/MainActivity.java
+
+    //지오 코딩 : https://blog.naver.com/PostView.nhn?isHttpsRedirect=true&blogId=qbxlvnf11&logNo=221183308547&parentCategoryNo=&categoryNo=44&viewDate=&isShowPopularPosts=false&from=postView
 
     public  void Toast(String str){
         Toast myToast = Toast.makeText(this.getApplicationContext(),str, Toast.LENGTH_SHORT);
