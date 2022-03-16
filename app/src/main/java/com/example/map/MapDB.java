@@ -43,12 +43,12 @@ public class MapDB {
         this.longitude = longitude;
     }
 
-    @Override
-    public String toString() {
-        return "map{" +
-                "location='" + title + '\'' +
-                "latitude='" + latitude  + '\'' +
-                ", longitude='" + longitude + '\'' +
-                '}';
-    }
+//    @Override
+//    public String toString() {
+//        return "map{" +
+//                "location='" + title + '\'' +
+//                "latitude='" + latitude  + '\'' +
+//                ", longitude='" + longitude + '\'' +
+//                '}';
+//    }
 }

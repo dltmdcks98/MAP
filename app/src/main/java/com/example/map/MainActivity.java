@@ -8,6 +8,8 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -32,8 +34,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
+import com.google.maps.android.collections.MarkerManager;
 import com.pedro.library.AutoPermissions;
 import com.pedro.library.AutoPermissionsListener;
+
+import java.io.IOException;
+import java.util.List;
 
 //구글 맵 연동 https://webnautes.tistory.com/647
 //현재 위치 조회  https://wonpaper.tistory.com/230
@@ -44,6 +50,8 @@ public class MainActivity extends AppCompatActivity
     LocationManager manager;
     GPSListener gpsListener;
     SupportMapFragment mapFragment;
+    Location location;
+
 
     //DB조회
     private DatabaseReference mDatabase;
@@ -56,6 +64,7 @@ public class MainActivity extends AppCompatActivity
         mDatabase = FirebaseDatabase.getInstance().getReference().child("map");
         manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         gpsListener = new GPSListener();
+
         try {
             MapsInitializer.initialize(this);
 
@@ -66,14 +75,13 @@ public class MainActivity extends AppCompatActivity
         mapFragment.getMapAsync(this);
 
         startLocationService();
+        //AutoPermission 승인 처리
         AutoPermissions.Companion.loadAllPermissions(this, 101);
     }
 
     public void startLocationService() {
         try {
-            Location location = null;
-
-            long minTime = 5000;
+            long minTime = 0;
             float minDistance = 0;
 
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -88,8 +96,7 @@ public class MainActivity extends AppCompatActivity
 
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
-                manager.removeUpdates(gpsListener);
-                Toast("GPS이용");
+//                manager.removeUpdates(gpsListener);
 
             } else if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 
@@ -110,6 +117,8 @@ public class MainActivity extends AppCompatActivity
             e.printStackTrace();
         }
     }
+
+
 
 
     class GPSListener implements LocationListener {
@@ -148,7 +157,8 @@ public class MainActivity extends AppCompatActivity
             Toast.makeText(getApplicationContext(), "접근 권한이 없습니다.", Toast.LENGTH_SHORT).show();
             return;
         } else {
-
+//https://webnautes.tistory.com/1249
+// https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=zoipower&logNo=30160106099
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, gpsListener);
                 //manager.removeUpdates(gpsListener);
@@ -168,7 +178,6 @@ public class MainActivity extends AppCompatActivity
     protected void onPause() {
         super.onPause();
         manager.removeUpdates(gpsListener);
-
         if (map != null) {
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -192,9 +201,20 @@ public class MainActivity extends AppCompatActivity
         }
         map = googleMap;
         map.setMyLocationEnabled(true);
+
+
+
+        //기본 marker
+        //        1.https://gun0912.tistory.com/57
+        //        2.https://fjdkslvn.tistory.com/17
+        //        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
         //마커 클러스터 https://developers.google.com/maps/documentation/android-sdk/utility/marker-clustering
         ClusterManager<MyItem> mclusterManager = new ClusterManager<>(this, map);
+        map.setOnCameraIdleListener(mclusterManager);
+        map.setOnMarkerClickListener(mclusterManager);
 
+        //지오코딩
+        Geocoder geocoder = new Geocoder(this);
         //map에 DB 내용 추가
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
@@ -204,15 +224,33 @@ public class MainActivity extends AppCompatActivity
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             MapDB map = snapshot.getValue(MapDB.class);
-                            double latitude = map.getLatitude();
-                            double longitude = map.getLongitude();
+//                            double latitude = map.getLatitude();
+//                            double longitude = map.getLongitude();
+                            List<Address> list = null;
                             String title = map.getTitle();
-                            for(int i =0; i< 10; i++) {
-                                mclusterManager.addItem(new MyItem(latitude, longitude, title));
-                                latitude +=1;
-                                longitude +=1;
-                                title +=1;
+                            try{
+                                list = geocoder.getFromLocationName("성결대학교",10);
+                            }catch (IOException e ){
+                                e.printStackTrace();
+                                Log.e("test","입출력 오류 - 서버에서 주소변환시 에러발생");
                             }
+//지오 코딩
+                            if(list != null){
+                                if(list.size() == 0 ){
+                                    Toast("해당 주소가 없습니다.");
+                                }else{
+                                    Address address = list.get(0);
+                                    double latitude = address.getLatitude();
+                                    double longitude = address.getLongitude();
+                                    mclusterManager.addItem(new MyItem(latitude, longitude, title));
+                                }
+                            }
+//                            for(int i =0; i< 10; i++) {
+//                                mclusterManager.addItem(new MyItem(latitude, longitude, title));
+//                                latitude +=1;
+//                                longitude +=1;
+//                                title +=1;
+//                            }
                         }
 
                         @Override
@@ -230,8 +268,15 @@ public class MainActivity extends AppCompatActivity
             }
 
         });
-        map.setOnCameraIdleListener(mclusterManager);
-        map.setOnMarkerClickListener(mclusterManager);
+
+//클러스터 아이템 클릭시 이벤트 발생
+        mclusterManager.setOnClusterItemClickListener(new ClusterManager.OnClusterItemClickListener<MyItem>() {
+            @Override
+            public boolean onClusterItemClick(MyItem item) {
+                Toast("test");
+                return false;
+            }
+        });
 
         //클러스터 클릭시 클러스터 확대 및 시점 이동
         //https://1d1cblog.tistory.com/119
@@ -242,12 +287,8 @@ public class MainActivity extends AppCompatActivity
                 CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 15);
                 map.moveCamera(cameraUpdate);
                 return false;
-            }
+             }
         });
-
-//        1.https://gun0912.tistory.com/57
-//        2.https://fjdkslvn.tistory.com/17
-//        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
 
 
     }
@@ -265,17 +306,12 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         AutoPermissions.Companion.parsePermissions(this, requestCode, permissions, this);
-        Toast.makeText(this, "requestCode : "+requestCode+"  permissions : "+permissions+"  grantResults :"+grantResults, Toast.LENGTH_SHORT).show();
     }
     @Override
     public void onGranted(int requestCode, String[] permissions) {
-        Toast.makeText(getApplicationContext(),"permissions granted : " + permissions.length, Toast.LENGTH_SHORT).show();
     }
     @Override
     public void onDenied(int requestCode, String[] permissions) {
-        Toast.makeText(getApplicationContext(),"permissions denied : " + permissions.length, Toast.LENGTH_SHORT).show();
     }
-
-
-
+    
 }
