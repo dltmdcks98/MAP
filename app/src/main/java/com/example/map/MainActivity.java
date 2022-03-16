@@ -213,7 +213,7 @@ public class MainActivity extends AppCompatActivity
         map.setOnCameraIdleListener(mclusterManager);
         map.setOnMarkerClickListener(mclusterManager);
 
-        //지오코딩
+        //지오코딩 https://bitsoul.tistory.com/135
         Geocoder geocoder = new Geocoder(this);
         //map에 DB 내용 추가
         mDatabase.addValueEventListener(new ValueEventListener() {
@@ -227,9 +227,9 @@ public class MainActivity extends AppCompatActivity
 //                            double latitude = map.getLatitude();
 //                            double longitude = map.getLongitude();
                             List<Address> list = null;
-                            String title = map.getTitle();
+                            String title = map.getTitle().toString();
                             try{
-                                list = geocoder.getFromLocationName("성결대학교",10);
+                                list = geocoder.getFromLocationName(title,10);
                             }catch (IOException e ){
                                 e.printStackTrace();
                                 Log.e("test","입출력 오류 - 서버에서 주소변환시 에러발생");
