@@ -51,6 +51,9 @@ dependencies {
     implementation 'com.google.firebase:firebase-analytics:17.2.3'
     implementation 'com.google.firebase:firebase-core:17.2.3'
     implementation 'com.google.firebase:firebase-database:20.0.4'
+    //firestore
+    implementation platform('com.google.firebase:firebase-bom:29.0.0')
+    implementation 'com.google.firebase:firebase-firestore'
 
 
     implementation 'com.github.pedroSG94:AutoPermissions:1.0.3'

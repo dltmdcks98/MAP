@@ -1,5 +1,7 @@
 package com.example.map;
 
+import static android.content.ContentValues.TAG;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,11 +29,18 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.collections.MarkerManager;
@@ -55,11 +64,15 @@ public class MainActivity extends AppCompatActivity
 
     //DB조회
     private DatabaseReference mDatabase;
+    FirebaseFirestore db;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        db = FirebaseFirestore.getInstance();
 
         mDatabase = FirebaseDatabase.getInstance().getReference().child("map");
         manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -69,7 +82,7 @@ public class MainActivity extends AppCompatActivity
             MapsInitializer.initialize(this);
 
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
         mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -158,7 +171,7 @@ public class MainActivity extends AppCompatActivity
             return;
         } else {
 //https://webnautes.tistory.com/1249
-// https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=zoipower&logNo=30160106099
+//https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=zoipower&logNo=30160106099
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, gpsListener);
                 //manager.removeUpdates(gpsListener);
@@ -202,20 +215,41 @@ public class MainActivity extends AppCompatActivity
         map = googleMap;
         map.setMyLocationEnabled(true);
 
-
-
         //기본 marker
         //        1.https://gun0912.tistory.com/57
         //        2.https://fjdkslvn.tistory.com/17
         //        3.https://steemit.com/kr-dev/@gbgg/firebase-3-firebase
         //마커 클러스터 https://developers.google.com/maps/documentation/android-sdk/utility/marker-clustering
+
         ClusterManager<MyItem> mclusterManager = new ClusterManager<>(this, map);
         map.setOnCameraIdleListener(mclusterManager);
         map.setOnMarkerClickListener(mclusterManager);
 
         //지오코딩 https://bitsoul.tistory.com/135
         Geocoder geocoder = new Geocoder(this);
+
+
         //map에 DB 내용 추가
+//       firestore
+//        https://firebase.google.com/docs/firestore/query-data/get-data?hl=ko
+//        db.collection("Marker")
+//                .whereEqualTo("title",true)
+//                .get()
+//                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                        if(task.isSuccessful()){
+//                            for(QueryDocumentSnapshot document : task.getResult()){
+//                                Log.d(TAG, document.getId() + " => " + document.getData());
+//                            }
+//                        }else{
+//                            Log.w("Error","Error getting document");
+//                        }
+//                    }
+//                });
+
+
+
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -227,7 +261,7 @@ public class MainActivity extends AppCompatActivity
 //                            double latitude = map.getLatitude();
 //                            double longitude = map.getLongitude();
                             List<Address> list = null;
-                            String title = map.getTitle().toString();
+                            String title = map.getTitle();
                             try{
                                 list = geocoder.getFromLocationName(title,10);
                             }catch (IOException e ){
