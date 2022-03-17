@@ -50,8 +50,8 @@ import com.pedro.library.AutoPermissionsListener;
 import java.io.IOException;
 import java.util.List;
 
-//구글 맵 연동 https://webnautes.tistory.com/647
-//현재 위치 조회  https://wonpaper.tistory.com/230
+//구글 맵 연동 https://webnautes.tistory.com/647 , https://webnautes.tistory.com/1249
+//현재 위치 조회  https://wonpaper.tistory.com/230 , https://gwynn.tistory.com/4 , https://github.com/wonderful-coding-life/sample-location/tree/master/app/src/main/java/com/sample/location
 public class MainActivity extends AppCompatActivity
         implements AutoPermissionsListener, OnMapReadyCallback {
     GoogleMap map;
@@ -99,13 +99,13 @@ public class MainActivity extends AppCompatActivity
 
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 location = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//                if (location != null) {
-//                    double latitude = location.getLatitude();
-//                    double longitude = location.getLongitude();
-//                    String message = "최근 위치1 -> Latitude : " + latitude + "\n Longitude : " + longitude;
-//                    showCurrentLocation(latitude, longitude);
-//                    Log.i("MyLocTest", "최근 위치1 호출" + message);
-//                }
+                if (location != null) {
+                    double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+                    String message = "최근 위치1 -> Latitude : " + latitude + "\n Longitude : " + longitude;
+                    showCurrentLocation(latitude, longitude);
+                    Log.i("MyLocTest", "최근 위치1 호출" + message);
+                }
 
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
@@ -114,13 +114,13 @@ public class MainActivity extends AppCompatActivity
             } else if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 
                 location = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-//                if (location != null) {
-//                    double latitude = location.getLatitude();
-//                    double longitude = location.getLongitude();
-//                    String message = "최근 위치2 -> Latitude : " + latitude + "\n Longitude : " + longitude;
-//                    showCurrentLocation(latitude, longitude);
-//                    Log.i("MyLocTest", "최근 위치2 호출" + message);
-//                }
+                if (location != null) {
+                    double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+                    String message = "최근 위치2 -> Latitude : " + latitude + "\n Longitude : " + longitude;
+                    showCurrentLocation(latitude, longitude);
+                    Log.i("MyLocTest", "최근 위치2 호출" + message);
+                }
 
                 //위치 요청하기
                 manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, (android.location.LocationListener) gpsListener);
